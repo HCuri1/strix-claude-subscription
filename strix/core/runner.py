@@ -44,6 +44,7 @@ from strix.core.inputs import (
 )
 from strix.core.paths import run_dir_for, runtime_state_dir
 from strix.core.sessions import open_agent_session
+from strix.llm.claude_code import claude_code_model
 from strix.report.state import get_global_report_state
 from strix.runtime import session_manager
 from strix.telemetry import set_scan_phase
@@ -256,8 +257,10 @@ async def run_strix_scan(
         raise RuntimeError(
             "No LLM model configured. Set STRIX_LLM env or pass model= to run_strix_scan().",
         )
-    if resolved_model != (settings.llm.model or "").strip() and not codex.subscription_model(
-        resolved_model
+    if (
+        resolved_model != (settings.llm.model or "").strip()
+        and not codex.subscription_model(resolved_model)
+        and not claude_code_model(resolved_model)
     ):
         configure_sdk_api_route(resolved_model, settings)
     logger.info("LLM model resolved: %s", resolved_model)

@@ -52,6 +52,7 @@ from strix.interface.update_check import (
 from strix.interface.utils import (
     build_final_stats_text,
 )
+from strix.llm.claude_code import claude_code_model
 from strix.llm.warmup import start_import_warmup, wait_for_import_warmup
 from strix.telemetry import posthog, report_error, scarf, set_scan_phase
 from strix.telemetry.logging import setup_console_logging
@@ -86,10 +87,25 @@ def _exception_messages(exc: BaseException) -> tuple[str, ...]:
 
 
 def _subscription_error_hint(exc: BaseException) -> str | None:
-    """Return an actionable hint for a known ChatGPT-subscription error, or None."""
-    if not codex.subscription_model(load_settings().llm.model):
-        return None
+    """Return an actionable hint for a known subscription-auth error, or None."""
+    model = load_settings().llm.model
     joined = " ".join(_exception_messages(exc)).lower()
+    if claude_code_model(model):
+        if (
+            "not signed in" in joined
+            or "claude auth login" in joined
+            or "/login" in joined
+            or "401" in joined
+            or "403" in joined
+        ):
+            return (
+                "Claude Code isn't signed in (or the session has expired). Run:\n"
+                "  claude auth login\n"
+                "Check the active account any time with: claude auth status"
+            )
+        return None
+    if not codex.subscription_model(model):
+        return None
     if "not supported when using codex with a chatgpt account" in joined:
         return (
             "This model isn't available on your ChatGPT subscription. "
@@ -317,7 +333,12 @@ def _print_model_connection_error(exc: BaseException) -> None:
     sub_hint = _subscription_error_hint(exc)
     if sub_hint is not None:
         border_style = "yellow"
-        error_text.append("MODEL NOT AVAILABLE ON SUBSCRIPTION", style="bold yellow")
+        title = (
+            "CLAUDE CODE SIGN-IN REQUIRED"
+            if claude_code_model(load_settings().llm.model)
+            else "MODEL NOT AVAILABLE ON SUBSCRIPTION"
+        )
+        error_text.append(title, style="bold yellow")
         error_text.append("\n\n", style="white")
         error_text.append(f"{sub_hint}\n", style="white")
         error_text.append(f"\nDetails: {exc}", style="dim white")

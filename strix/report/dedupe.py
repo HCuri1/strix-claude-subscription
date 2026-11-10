@@ -58,9 +58,12 @@ def resolve_dedupe_model(dedupe: DedupeSettings, model_name: str) -> Model:
     """
     api_key = (dedupe.api_key or "").strip() if dedupe.model else ""
     api_base = (dedupe.api_base or "").strip() if dedupe.model else ""
-    if not (api_key or api_base):
+    effort = dedupe.reasoning_effort if dedupe.model else None
+    if not (api_key or api_base or effort):
         return StrixProvider().get_model(model_name)
-    return StrixProvider(api_key=api_key or None, base_url=api_base or None).get_model(model_name)
+    return StrixProvider(
+        api_key=api_key or None, base_url=api_base or None, reasoning_effort=effort
+    ).get_model(model_name)
 
 
 DEDUPE_SYSTEM_PROMPT = """You are an expert vulnerability report deduplication judge.

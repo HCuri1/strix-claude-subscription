@@ -39,6 +39,56 @@ def test_context_window_chatgpt_prefix_skips_provider_auth(
         context_budget._model_info.cache_clear()
 
 
+def test_context_window_claude_code_prefix_skips_provider_auth(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    context_budget._model_info.cache_clear()
+    calls: list[str] = []
+
+    def _model_info(model: str) -> dict[str, int]:
+        calls.append(model)
+        return {"max_input_tokens": 1_000_000, "max_output_tokens": 128_000}
+
+    monkeypatch.setattr("litellm.get_model_info", _model_info)
+    try:
+        assert context_budget.context_window("claude-code/claude-opus-4-7") == 1_000_000
+        assert calls == ["claude-opus-4-7"]
+    finally:
+        context_budget._model_info.cache_clear()
+
+
+def test_context_window_claude_code_alias_uses_static_table(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    context_budget._model_info.cache_clear()
+
+    def _raise(_model: str) -> dict[str, int]:
+        raise ValueError("This model isn't mapped yet.")
+
+    monkeypatch.setattr("litellm.get_model_info", _raise)
+    try:
+        assert context_budget.context_window("claude-code/sonnet") == 1_000_000
+        assert context_budget.output_limit("claude-code/sonnet") == 128_000
+    finally:
+        context_budget._model_info.cache_clear()
+
+
+def test_context_window_claude_code_unknown_alias_falls_back(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    context_budget._model_info.cache_clear()
+
+    def _raise(_model: str) -> dict[str, int]:
+        raise ValueError("This model isn't mapped yet.")
+
+    monkeypatch.setattr("litellm.get_model_info", _raise)
+    expected = load_settings().context.fallback_context_tokens
+    try:
+        assert context_budget.context_window("claude-code/some-future-alias") == expected
+    finally:
+        context_budget._model_info.cache_clear()
+
+
 def test_context_window_unmapped_uses_fallback(monkeypatch: pytest.MonkeyPatch) -> None:
     context_budget._model_info.cache_clear()
 

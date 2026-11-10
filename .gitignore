@@ -94,6 +94,14 @@ schema.graphql
 
 .opencode/
 
+# Tool caches
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+
+# Claude Code's own local session/tooling state, not part of the project
+.claude/
+
 # Root-only local data and reference checkouts
 /.benchmarks/
 /references/

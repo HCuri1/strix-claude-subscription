@@ -287,6 +287,26 @@ def is_subscription_run(report_state: Any) -> bool:
     return codex.auth_mode(load_settings().llm.model) == "subscription"
 
 
+def subscription_label(report_state: Any) -> str | None:
+    """Human label for the subscription backing this run ("Claude subscription",
+    "ChatGPT subscription"), or None when not a subscription run.
+
+    Prefers the run record so it's correct for hydrated/resumed runs; falls back
+    to current settings for records predating this field.
+    """
+    record = getattr(report_state, "run_record", None)
+    if isinstance(record, dict):
+        if record.get("subscription_label"):
+            return str(record["subscription_label"])
+        if record.get("auth_mode") == "subscription":
+            return "ChatGPT subscription"  # legacy record, predates this field
+        if record.get("auth_mode"):
+            return None
+    from strix.config import codex
+
+    return codex.subscription_label(load_settings().llm.model)
+
+
 def _int_stat(usage: dict[str, Any], key: str) -> int:
     try:
         return max(0, int(usage.get(key) or 0))
@@ -386,9 +406,10 @@ def build_live_stats_text(report_state: Any) -> Text:
     model = load_settings().llm.model or "unknown"
     stats_text.append("Model ", style="dim")
     stats_text.append(str(model), style="white")
-    if is_subscription_run(report_state):
+    label = subscription_label(report_state)
+    if label:
         stats_text.append("  ·  ", style="dim white")
-        stats_text.append("ChatGPT subscription", style="#22c55e")
+        stats_text.append(label, style="#22c55e")
     stats_text.append("\n")
 
     vuln_count = len(report_state.vulnerability_reports)
@@ -431,10 +452,11 @@ def build_tui_stats_text(report_state: Any) -> Text:
 
     model = load_settings().llm.model or "unknown"
     stats_text.append(str(model), style="white")
-    subscription = is_subscription_run(report_state)
-    if subscription:
+    label = subscription_label(report_state)
+    subscription = label is not None
+    if label:
         stats_text.append("\n")
-        stats_text.append("ChatGPT subscription", style="#22c55e")
+        stats_text.append(label, style="#22c55e")
 
     usage = _llm_usage(report_state)
     if usage and _int_stat(usage, "total_tokens") > 0:

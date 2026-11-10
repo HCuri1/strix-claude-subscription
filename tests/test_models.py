@@ -142,6 +142,19 @@ def test_api_type_overrides_the_api_base_route(
     assert isinstance(model, expected)
 
 
+def test_configure_sdk_model_defaults_still_sets_up_litellm_for_dedupe(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The main model's subscription route must not skip LiteLLM setup a
+    differently-routed STRIX_DEDUPE_MODEL still needs."""
+    monkeypatch.setenv("STRIX_LLM", "claude-code/sonnet")
+    monkeypatch.setenv("STRIX_DEDUPE_MODEL", "anthropic/claude-haiku-4-5")
+    calls: list[int] = []
+    monkeypatch.setattr(models, "_configure_litellm_compatibility", lambda: calls.append(1))
+    configure_sdk_model_defaults(Settings())
+    assert calls == [1]
+
+
 def _settings(monkeypatch: pytest.MonkeyPatch, model: str, api_base: str | None) -> Settings:
     monkeypatch.setenv("STRIX_LLM", model)
     monkeypatch.delenv("STRIX_API_TYPE", raising=False)

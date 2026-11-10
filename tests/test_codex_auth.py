@@ -106,6 +106,13 @@ def test_auth_mode() -> None:
     assert codex.auth_mode(None) == "api_key"
 
 
+def test_subscription_label() -> None:
+    assert codex.subscription_label("claude-code/sonnet") == "Claude subscription"
+    assert codex.subscription_label("chatgpt/gpt-5.4") == "ChatGPT subscription"
+    assert codex.subscription_label("anthropic/claude-opus-4-8") is None
+    assert codex.subscription_label(None) is None
+
+
 def test_is_content_guardrail_error() -> None:
     # The backend's real wording (from a live gpt-5.6-sol block).
     raw = RuntimeError(

@@ -52,6 +52,8 @@ dependencies = [
   # the Intel macOS (macos-x86_64) release build's `uv sync --frozen`.
   "cryptography>=48.0.1,<49",
   "pyyaml>=6.0",
+  # STRIX_LLM=claude-code/<model>: drives the user's own Claude Code sign-in.
+  "claude-agent-sdk>=0.2.180",
 ]
 
 [project.scripts]

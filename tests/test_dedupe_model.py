@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 
 from strix.config import loader
 from strix.config.settings import DedupeSettings
+from strix.llm.claude_code import ClaudeCodeModel
 from strix.report.dedupe import _dedupe_model_settings, resolve_dedupe_model
 
 
@@ -89,6 +90,29 @@ def test_fallback_dedupe_inherits_main_headers(monkeypatch: pytest.MonkeyPatch) 
     try:
         settings = _dedupe_model_settings(DedupeSettings(), "openai/main-model", 300)
         assert settings.extra_headers == {"X-Main": "svc"}
+    finally:
+        loader._cached = None
+
+
+def test_dedupe_claude_code_uses_its_own_reasoning_effort() -> None:
+    dedupe = DedupeSettings(
+        STRIX_DEDUPE_MODEL="claude-code/opus", STRIX_DEDUPE_REASONING_EFFORT="low"
+    )
+    model = _unwrap(resolve_dedupe_model(dedupe, "claude-code/opus"))
+    assert isinstance(model, ClaudeCodeModel)
+    assert model._effort == "low"
+
+
+def test_dedupe_claude_code_falls_back_to_main_effort_without_dedicated_model(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("STRIX_REASONING_EFFORT", "xhigh")
+    loader._cached = None
+    try:
+        dedupe = DedupeSettings()  # no STRIX_DEDUPE_MODEL
+        model = _unwrap(resolve_dedupe_model(dedupe, "claude-code/opus"))
+        assert isinstance(model, ClaudeCodeModel)
+        assert model._effort == "xhigh"
     finally:
         loader._cached = None
 

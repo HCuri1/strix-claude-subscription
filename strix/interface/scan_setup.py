@@ -320,6 +320,7 @@ def _persist_run_record(args: argparse.Namespace) -> None:
         "start_time": datetime.now(UTC).isoformat(),
         "end_time": None,
         "auth_mode": codex.auth_mode(load_settings().llm.model),
+        "subscription_label": codex.subscription_label(load_settings().llm.model),
         "targets_info": args.targets_info,
         "scan_mode": args.scan_mode,
         "instruction": args.instruction,

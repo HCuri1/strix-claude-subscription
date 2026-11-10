@@ -42,7 +42,7 @@ from strix.config import codex
 from strix.config.loader import load_settings
 from strix.config.tool_call_ids import TurnCallIdRewriter, dedupe_input
 from strix.config.tool_call_limits import TurnToolCallLimiter
-from strix.llm import request_log
+from strix.llm import claude_code, request_log
 
 
 if TYPE_CHECKING:
@@ -512,6 +512,7 @@ class StrixProvider(MultiProvider):
         *,
         api_key: str | None = None,
         base_url: str | None = None,
+        reasoning_effort: ReasoningEffort | None = None,
         **kwargs: Any,
     ) -> None:
         super().__init__(
@@ -524,6 +525,7 @@ class StrixProvider(MultiProvider):
         )
         self._override_api_key = api_key
         self._override_base_url = base_url
+        self._reasoning_effort_override = reasoning_effort
 
     def _create_fallback_provider(self, prefix: str) -> ModelProvider:
         if prefix == "litellm" and (self._override_api_key or self._override_base_url):
@@ -550,12 +552,25 @@ class StrixProvider(MultiProvider):
     def get_model(self, model_name: str | None) -> Model:
         llm = load_settings().llm
         slug = codex.subscription_model(model_name)
+        claude_slug = claude_code.claude_code_model(model_name)
         idle_timeout = float(llm.stream_idle_timeout)
-        if slug:
+        model: Model
+        if claude_slug:
+            # One headless Claude Code run per turn, answered whole: there is no
+            # token stream to be idle on, so the request timeout bounds it instead.
+            effort = self._reasoning_effort_override or llm.reasoning_effort
+            model = request_log.RequestLoggingModel(
+                claude_code.ClaudeCodeModel(claude_slug, reasoning_effort=effort),
+                model_name=claude_slug,
+                provider="claude-code",
+                base_url=None,
+            )
+            idle_timeout = 0.0
+        elif slug:
             # The ChatGPT subscription backend is always streamed; it has no
             # non-streaming mode to fall back to, so LLM_DISABLE_STREAMING
             # does not apply here.
-            model: Model = request_log.RequestLoggingModel(
+            model = request_log.RequestLoggingModel(
                 _CodexResponsesModel(
                     slug,
                     codex.get_subscription_client(),
@@ -638,9 +653,12 @@ def configure_sdk_model_defaults(settings: Settings) -> None:
     llm = settings.llm
     set_tracing_disabled(True)
     request_log.install()
-    if codex.subscription_model(llm.model):
-        return
+    # Needed whenever any route - main or a differently-provisioned dedupe
+    # model - goes through LiteLLM, even when the main model is a
+    # subscription route that skips everything else below.
     _configure_litellm_compatibility()
+    if codex.subscription_model(llm.model) or claude_code.claude_code_model(llm.model):
+        return
     _configure_openrouter_attribution(llm.model)
     if llm.api_key:
         set_default_openai_key(llm.api_key, use_for_tracing=False)
@@ -882,6 +900,9 @@ def uses_chat_completions_tool_schema(model_name: str, settings: Settings) -> bo
     """Return whether the resolved SDK route can only receive JSON function tools."""
     if codex.subscription_model(model_name):
         return False
+    if claude_code.claude_code_model(model_name):
+        # Only JSON function tools can become Claude Code MCP tools.
+        return True
     model = model_name.strip().lower()
     if "/" in model and not model.startswith("openai/"):
         return True
@@ -951,7 +972,7 @@ def routes_through_litellm(model_name: str | None) -> bool:
     OpenAI-compatible gateway in front of Claude.
     """
     name = (model_name or "").strip()
-    if not name or codex.subscription_model(name):
+    if not name or codex.subscription_model(name) or claude_code.claude_code_model(name):
         return False
     prefix, _, rest = name.partition("/")
     return bool(rest) and prefix.lower() not in {"openai", "any-llm"}

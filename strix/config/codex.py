@@ -403,4 +403,18 @@ def subscription_model(model_name: str | None) -> str | None:
 
 
 def auth_mode(model_name: str | None) -> str:
-    return "subscription" if subscription_model(model_name) else "api_key"
+    from strix.llm.claude_code import claude_code_model
+
+    on_subscription = subscription_model(model_name) or claude_code_model(model_name)
+    return "subscription" if on_subscription else "api_key"
+
+
+def subscription_label(model_name: str | None) -> str | None:
+    """Human label for the subscription backing ``model_name``, or None for api_key."""
+    from strix.llm.claude_code import claude_code_model
+
+    if claude_code_model(model_name):
+        return "Claude subscription"
+    if subscription_model(model_name):
+        return "ChatGPT subscription"
+    return None

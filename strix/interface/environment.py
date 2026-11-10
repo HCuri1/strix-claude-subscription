@@ -14,6 +14,7 @@ from strix.interface.utils import (
     image_exists,
     process_pull_line,
 )
+from strix.llm.claude_code import billing_risk_env_vars, check_available, claude_code_model
 from strix.telemetry import report_error
 
 
@@ -48,6 +49,24 @@ def validate_environment() -> None:
             report_error("subscription_not_signed_in")
             sys.exit(1)
         logger.info("Environment OK (ChatGPT subscription)")
+        return
+
+    if claude_code_model(settings.llm.model):
+        problem, detail = check_available()
+        if problem is not None:
+            console.print(f"[red]STRIX_LLM={settings.llm.model}:[/] {problem}")
+            report_error("claude_code_unavailable")
+            sys.exit(1)
+        risky = billing_risk_env_vars()
+        if risky:
+            console.print(
+                f"[yellow]Warning:[/] {', '.join(risky)} set in your environment — "
+                "the `claude` subprocess may use it to authenticate instead of your "
+                "subscription login, which means real API billing instead of Strix's "
+                "$0 subscription accounting. Strix does not modify these; unset them "
+                "to guarantee the subscription route is used."
+            )
+        logger.info("Environment OK (Claude Code, %s)", detail)
         return
 
     if not settings.llm.model:

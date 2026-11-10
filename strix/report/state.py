@@ -220,7 +220,8 @@ class ReportState:
 
         self._llm_usage = LLMUsageLedger()
         self._telemetry_llm_usage_baseline: dict[str, Any] = {}
-        auth_mode = codex.auth_mode(load_settings().llm.model)
+        model = load_settings().llm.model
+        auth_mode = codex.auth_mode(model)
         self._llm_usage.zero_cost = auth_mode == "subscription"
         self.run_record: dict[str, Any] = {
             "run_id": self.run_id,
@@ -229,6 +230,7 @@ class ReportState:
             "end_time": None,
             "status": "running",
             "auth_mode": auth_mode,
+            "subscription_label": codex.subscription_label(model),
             "targets_info": [],
             "llm_usage": self._build_llm_usage_record(),
         }

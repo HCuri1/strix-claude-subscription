@@ -84,6 +84,8 @@ class LlmSettings(BaseSettings):
         ge=0,
         alias="LLM_MAX_TOOL_CALLS_PER_TURN",
     )
+    claude_code_concurrency: int = Field(default=3, ge=1, alias="STRIX_CLAUDE_CODE_CONCURRENCY")
+    claude_code_timeout: float = Field(default=600.0, gt=0, alias="STRIX_CLAUDE_CODE_TIMEOUT")
 
     @field_validator("api_type", "reasoning_effort", mode="before")
     @classmethod

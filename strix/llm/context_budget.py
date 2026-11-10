@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 _STRIPPABLE_PREFIXES = (
     "openai/",
     "chatgpt/",
+    "claude-code/",
     "litellm/",
     "any-llm/",
     "ollama/",
@@ -43,12 +44,29 @@ def _safe_get_model_info(model: str) -> dict[str, Any] | None:
         return None
 
 
+def _claude_code_alias_limits(model: str) -> tuple[int, int] | None:
+    """Best-effort context/output limits for a bare ``claude-code/<alias>``.
+
+    Aliases (``sonnet``/``opus``/``haiku``) have no LiteLLM catalog entry at
+    all, unlike full versioned ids (fixed by skipping the prefixed lookup
+    below). This is a safety net over the configured fallback, not a source
+    of truth.
+    """
+    from strix.llm.claude_code import ALIAS_CONTEXT_LIMITS, claude_code_model
+
+    slug = claude_code_model(model)
+    return ALIAS_CONTEXT_LIMITS.get(slug.lower()) if slug else None
+
+
 @lru_cache(maxsize=128)
 def _model_info(model: str) -> dict[str, int]:
     lookup_key = _lookup_key(model)
-    # Provider-qualified ChatGPT lookups may start a synchronous device-login
-    # poll. LiteLLM keys the metadata by the underlying model slug.
-    candidates = (lookup_key,) if model.startswith("chatgpt/") else (model, lookup_key)
+    # Provider-qualified ChatGPT/Claude-Code lookups may start a synchronous
+    # device-login poll or resolve to a generic fallback record. LiteLLM
+    # keys the metadata by the underlying model slug.
+    candidates = (
+        (lookup_key,) if model.startswith(("chatgpt/", "claude-code/")) else (model, lookup_key)
+    )
     for candidate in candidates:
         info = _safe_get_model_info(candidate)
         if info is not None:
@@ -58,6 +76,10 @@ def _model_info(model: str) -> dict[str, int]:
                 ),
                 "max_output_tokens": int(info.get("max_output_tokens") or 0),
             }
+    alias_limits = _claude_code_alias_limits(model)
+    if alias_limits is not None:
+        max_input, max_output = alias_limits
+        return {"max_input_tokens": max_input, "max_output_tokens": max_output}
     logger.debug("No LiteLLM model info for %r; using configured fallbacks", model)
     return {"max_input_tokens": 0, "max_output_tokens": 0}
 

@@ -12,6 +12,7 @@ import pytest
 
 cli_main: Any = importlib.import_module("strix.interface.main")
 cli_args: Any = importlib.import_module("strix.interface.cli_args")
+loader: Any = importlib.import_module("strix.config.loader")
 report_state_module: Any = importlib.import_module("strix.report.state")
 interactive: Any = importlib.import_module("strix.interface.interactive")
 tui_runtime: Any = importlib.import_module("strix.interface.tui.runtime")
@@ -109,6 +110,34 @@ def test_direct_launch_with_a_bad_key_prints_the_panel_and_exits_before_the_tui(
 
     assert exit_info.value.code == 1
     assert calls == ["panel:Error code: 401"]
+
+
+def test_subscription_error_hint_claude_code_points_at_claude_auth_login(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("STRIX_LLM", "claude-code/sonnet")
+    monkeypatch.setattr(loader, "_cached", None)
+    monkeypatch.setattr(loader, "_override", None)
+    try:
+        hint = cli_main._subscription_error_hint(
+            RuntimeError("Claude Code is not signed in. Run `claude auth login` first.")
+        )
+        assert hint is not None
+        assert "claude auth login" in hint
+    finally:
+        monkeypatch.setattr(loader, "_cached", None)
+
+
+def test_subscription_error_hint_claude_code_returns_none_for_unrelated_errors(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("STRIX_LLM", "claude-code/sonnet")
+    monkeypatch.setattr(loader, "_cached", None)
+    monkeypatch.setattr(loader, "_override", None)
+    try:
+        assert cli_main._subscription_error_hint(RuntimeError("connection reset")) is None
+    finally:
+        monkeypatch.setattr(loader, "_cached", None)
 
 
 def test_tui_startup_failure_marks_the_prepared_run_failed(monkeypatch: pytest.MonkeyPatch) -> None:
