@@ -23,4 +23,5 @@ jobs:
       - run: test -z "$(gofmt -l .)"
       - run: go vet ./...
       - run: CGO_ENABLED=0 go build -trimpath -o /dev/null ./cmd/strix-tui
-      - run: go test -race ./...
+      # go test intentionally not run in CI on this fork (personal repo; no
+      # test suite execution in Actions). Run `make tui-test` locally instead.
