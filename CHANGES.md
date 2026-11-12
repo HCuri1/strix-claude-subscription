@@ -1,7 +1,10 @@
 # Changes from the Strix `1.7.0` release source
 
 This project is built from a downloaded copy of the [Strix](https://github.com/usestrix/strix)
-`1.7.0` release source (not a GitHub fork). It adds one feature on top: a
+`1.7.0` release source (not a GitHub fork). Its git history has since been
+relinked to upstream's real `v1.7.0` tag as a true common ancestor, so it is
+no longer a one-shot source dump either — see [UPDATING.md](UPDATING.md) for
+how updates to later releases work. It adds one feature on top: a
 `claude-code/<model>` LLM backend that routes model calls through the user's
 own authenticated `claude` binary (Claude Agent SDK) instead of a metered API
 key, so scans run on a Claude Pro/Max subscription at $0 additional API cost.

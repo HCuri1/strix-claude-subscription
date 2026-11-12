@@ -13,7 +13,7 @@
 ---
 
 > [!IMPORTANT]
-> **This is an unofficial, independent project.** It is built from a downloaded copy of the Strix `1.7.0` release source (not a GitHub fork, so it has no fork relationship to the original repo) and is not affiliated with, endorsed by, or supported by the Strix team or `usestrix`. For the official project, support, and the full feature set (Strix Cloud, Enterprise, managed platform), go to **[usestrix/strix](https://github.com/usestrix/strix)** and **[strix.ai](https://strix.ai)**.
+> **This is an unofficial, independent project.** It is built from a downloaded copy of the Strix `1.7.0` release source (not a GitHub fork — there's no fork relationship on GitHub itself, though its git history is now relinked to upstream's real `v1.7.0` tag, see [UPDATING.md](UPDATING.md)) and is not affiliated with, endorsed by, or supported by the Strix team or `usestrix`. For the official project, support, and the full feature set (Strix Cloud, Enterprise, managed platform), go to **[usestrix/strix](https://github.com/usestrix/strix)** and **[strix.ai](https://strix.ai)**.
 
 ## What this is
 
@@ -21,7 +21,7 @@
 
 This project adds one thing on top of Strix `1.7.0`: a **`claude-code/<model>` model backend** that routes every LLM call Strix makes through your own locally-installed, already-authenticated [`claude`](https://code.claude.com) binary (via the official [Claude Agent SDK](https://github.com/anthropics/claude-agent-sdk-python)) instead of a per-token API key. If you already pay for Claude Pro or Max, scans run on that subscription at **$0 additional API cost**.
 
-Everything else — the agent graph, the sandbox, the tools, the reporting — is untouched from that release. See **[CHANGES.md](CHANGES.md)** for the exact list of modified files and what each change does.
+Everything else — the agent graph, the sandbox, the tools, the reporting — is untouched from that release. See **[CHANGES.md](CHANGES.md)** for the exact list of modified files and what each change does, and **[UPDATING.md](UPDATING.md)** for how this repo picks up later upstream releases.
 
 ### How it works, briefly
 
