@@ -55,7 +55,7 @@ class LlmSettings(BaseSettings):
         alias="LLM_EXTRA_HEADERS",
         repr=False,
     )
-    reasoning_effort: ReasoningEffort = Field(default="high", alias="STRIX_REASONING_EFFORT")
+    reasoning_effort: ReasoningEffort = Field(default="medium", alias="STRIX_REASONING_EFFORT")
     force_required_tool_choice: bool = Field(
         default=False,
         alias="STRIX_FORCE_REQUIRED_TOOL_CHOICE",

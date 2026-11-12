@@ -56,7 +56,11 @@ Base version: Strix `1.7.0`.
 - **`strix/config/settings.py`** — added `claude_code_concurrency` /
   `claude_code_timeout` to `LlmSettings` (`STRIX_CLAUDE_CODE_CONCURRENCY` /
   `STRIX_CLAUDE_CODE_TIMEOUT`), replacing ad-hoc `os.environ` reads so these
-  tunables are validated and persisted like every other Strix setting.
+  tunables are validated and persisted like every other Strix setting. Also
+  changed `LlmSettings.reasoning_effort`'s default from `"high"` to
+  `"medium"` for every model/provider (not claude-code-specific) — lower
+  default reasoning-token spend per turn. Override with `STRIX_REASONING_EFFORT`
+  if you want the original `"high"` behavior back.
 - **`strix/report/dedupe.py`** — `resolve_dedupe_model` passes a dedicated
   dedupe model's own reasoning effort through to `StrixProvider`.
 - **`pyproject.toml`** — added `claude-agent-sdk>=0.2.180` as a dependency.
