@@ -1,5 +1,8 @@
 # Contributing to Strix
 
+> [!NOTE]
+> This file is carried over unmodified from the upstream [usestrix/strix](https://github.com/usestrix/strix) project. It describes contributing to *that* project — clone/PR instructions below point there, not at this personal repository. For changes specific to this repo's Claude-subscription backend, see [CHANGES.md](CHANGES.md) and [UPDATING.md](UPDATING.md) instead.
+
 Thank you for your interest in contributing to Strix! This guide will help you get started with development and contributions.
 
 ## 🚀 Development Setup
