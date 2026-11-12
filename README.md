@@ -90,6 +90,17 @@ export STRIX_CLAUDE_CODE_CONCURRENCY=3   # max parallel `claude` processes (defa
 export STRIX_CLAUDE_CODE_TIMEOUT=600     # per-turn timeout in seconds (default 600)
 ```
 
+### Reasoning effort
+
+`STRIX_REASONING_EFFORT` controls how much the model "thinks" per turn, independent of which model you pick. Default is `medium`. Valid values: `none`, `minimal`, `low`, `medium`, `high`, `xhigh`, `max` (not every provider supports every level — unsupported values fall back to the closest one it does).
+
+```bash
+export STRIX_REASONING_EFFORT=high   # more thorough per turn, burns through your subscription's usage cap faster
+export STRIX_REASONING_EFFORT=low    # faster, cheaper turns — good default if you're hitting usage limits often
+```
+
+If you're running Strix scans and chatting with Claude Code side by side, remember they draw from the **same** subscription usage window — a lower effort here leaves more of that cap for everything else.
+
 > [!WARNING]
 > **Billing-risk check.** If `ANTHROPIC_API_KEY`, `ANTHROPIC_AUTH_TOKEN`, `CLAUDE_CODE_USE_BEDROCK`, or `CLAUDE_CODE_USE_VERTEX` are set in your shell, the `claude` binary will use them instead of your subscription login — real metered billing, while Strix still reports `$0`. Strix warns you at startup if it detects any of these; it never modifies your environment, so unset them yourself if you want the subscription route guaranteed.
 
